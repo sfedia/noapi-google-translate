@@ -5,23 +5,12 @@ import re
 import shutil
 
 
-def subject_path(subject_name):
-    return os.path.join(
-        "Программы RU HTML",
-        subject_name
-    )
+def copy_index(source_path, dest_path):
+    shutil.copy(source_path, dest_path)
 
-def copy_index(subject_name):
-    shutil.copy(
-        os.path.join(subject_path(subject_name), "index.html"),
-        os.path.join(subject_path(subject_name), "modified.html")
-    )
 
-def simplify_html(subject_name):
-    tree = lxml.html.parse(
-        os.path.join(subject_path(subject_name), "modified.html")
-    )
-    n = 0
+def simplify_html(dest_path):
+    tree = lxml.html.parse(dest_path)
     for p_tag in tree.xpath('body/p'):
         t = ''.join(p_tag.itertext())
         for child in p_tag.xpath("*"):
@@ -37,15 +26,20 @@ def simplify_html(subject_name):
         td_tag.append(lxml.html.fragment_fromstring(t))
 
     tree.write(
-        os.path.join(subject_path(subject_name), "modified.html"),
+        dest_path,
         pretty_print=True,
         encoding='utf-8',
         method='html'
     )
-    print(n)
+
 
 if __name__ == "__main__":
-    subject = "Введение в компьютерную лингвистику"
-    copy_index(subject)
-    simplify_html(subject)
-    print()
+    source_folder = input("Source folder: ").replace(" ", r"\ ")
+    source_name = input("Source name: ").replace(" ", r"\ ")
+    source_path = os.path.join(source_folder, source_name)
+    dest_folder = input("Destination folder: ").replace(" ", r"\ ")
+    dest_name = input("Destination name: ").replace(" ", r"\ ")
+    dest_path = os.path.join(dest_folder, dest_name)
+    copy_index(source_path, dest_path)
+    simplify_html(dest_path)
+    print(f"Simplified '{source_path}' -> '{dest_path}'")
