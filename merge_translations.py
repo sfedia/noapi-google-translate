@@ -8,8 +8,9 @@ def merge_files(source_folder, prefix_name):
     for merged_file in fls:
         tree = lxml.html.parse(os.path.join(source_folder, merged_file))
         catch_elements = tree.xpath("//*[contains(@class, 'target-text')]")
-        import ipdb; ipdb.set_trace();
         for n, elem in enumerate(catch_elements):
+            while elem.getchildren():
+                elem.remove(elem.getchildren()[0])
             if n not in meta_list:
                 meta_list[n] = elem
             elif "target-text" in meta_list[n].classes and "target-text-modified" in elem.classes:

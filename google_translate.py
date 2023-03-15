@@ -15,7 +15,7 @@ def translate_chain(driver, input_box, paragraphs):
     prev = None
     for par in paragraphs:
         print(f"Current paragraph: '{par}'")
-        if not par or par == " " or re.search(r'^[\d ]+$', par) or re.search(r'[A-Za-z]', par):
+        if not par or par == " " or re.search(r'^[\d ]+$', par):
             prev = par
             yield par
             continue
@@ -61,6 +61,12 @@ def start_translator(source, min_element, max_element, destination, headless):
     driver.set_window_size(1920,1080)
 
     driver.get('https://translate.google.com/?sl=ru&tl=de')
+    turn_off_input_method_button = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located(
+            (By.CSS_SELECTOR, '[aria-label="Turn off Input Method"]')
+        )
+    )
+    turn_off_input_method_button.click()
     input_box = WebDriverWait(driver, 10).until(
         EC.presence_of_element_located(
             (By.CSS_SELECTOR, "textarea[aria-label='Source text']")
