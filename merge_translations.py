@@ -2,8 +2,12 @@ import lxml.html
 import os
 
 
+
+def is_thread_file(filename, prefix_name):
+    return filename.startswith(prefix_name) and filename[len(prefix_name)].isdigit()
+
 def merge_files(source_folder, prefix_name):
-    fls = [fl for fl in os.listdir(source_folder) if fl.startswith(prefix_name) and fl[len(prefix_name)] not in [".", "-"]]
+    fls = [fl for fl in os.listdir(source_folder) if is_thread_file(fl, prefix_name)]
     meta_list = {}
     for merged_file in fls:
         tree = lxml.html.parse(os.path.join(source_folder, merged_file))
@@ -30,12 +34,12 @@ def merge_files(source_folder, prefix_name):
         method='html'
     )
     
-    print(f'Merged in {os.path.join(source_folder, f"{prefix_name}-merged.html")}')
+    print(f"Merged into '{os.path.join(source_folder, f'{prefix_name}-merged.html')}'")
 
 
 
 if __name__ == "__main__":
-    source_folder = input("Source folder: ").replace(" ", r"\ ")
-    prefix_name = input("Prefix name: ").replace(" ", r"\ ")
+    source_folder = input("Source folder: ")
+    prefix_name = input("Prefix name: ")
     merge_files(source_folder, prefix_name)
 

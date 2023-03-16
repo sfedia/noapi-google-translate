@@ -34,11 +34,11 @@ def simplify_html(dest_path):
 
 
 if __name__ == "__main__":
-    source_folder = input("Source folder: ").replace(" ", r"\ ")
-    source_name = input("Source name: ").replace(" ", r"\ ")
+    source_folder = input("Source folder: ")
+    source_name = input("Source name: ")
     source_path = os.path.join(source_folder, source_name)
-    dest_folder = input("Destination folder: ").replace(" ", r"\ ")
-    dest_name = input("Destination name: ").replace(" ", r"\ ")
+    dest_folder = input("Destination folder: ")
+    dest_name = input("Destination name: ")
     dest_path = os.path.join(dest_folder, dest_name)
     copy_index(source_path, dest_path)
     simplify_html(dest_path)

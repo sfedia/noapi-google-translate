@@ -11,10 +11,21 @@ import re
 import threading
 
 
-def translate_chain(driver, input_box, paragraphs):
+class GlobalCounter:
+    def __init__(self, total):
+        self.total = total
+        self.translated = 0
+
+    @property
+    def percentage(self):
+        return self.translated / self.total * 100
+
+
+def translate_chain(driver, input_box, paragraphs, debug_mode):
     prev = None
     for par in paragraphs:
-        print(f"Current paragraph: '{par}'")
+        if debug_mode:
+            print(f"Current paragraph: '{par}'")
         if not par or par == " " or re.search(r'^[\d ]+$', par):
             prev = par
             yield par
@@ -28,7 +39,8 @@ def translate_chain(driver, input_box, paragraphs):
         t = 0
         while t < 5 and prev == selected_span.get_attribute('innerText'):
             time.sleep(0.1)
-            print('t=', t)
+            if debug_mode:
+                print('t =', t)
             t += 0.1
         prev = selected_span.get_attribute("innerText")
         input_box.send_keys(len(input_box.get_attribute("value")) * Keys.BACKSPACE)
@@ -49,7 +61,8 @@ def provide_paragraphs(source):
 
 
   
-def start_translator(source, min_element, max_element, destination, headless):
+def start_translator(source, min_element, max_element, destination, headless, debug_mode):
+    global global_counter
     options = webdriver.ChromeOptions()
     options.add_argument("--start-maximized")
     options.add_argument('--log-level=3')
@@ -85,14 +98,16 @@ def start_translator(source, min_element, max_element, destination, headless):
         method='html'
     )
     i = 0
-    for result in translate_chain(driver, input_box, paragraphs):
+    for result in translate_chain(driver, input_box, paragraphs, debug_mode):
         target_elements[i + min_element].text = result
         target_elements[i + min_element].tail = ""
         while target_elements[i + min_element].getchildren():
             target_elements[i + min_element].remove(target_elements[i + min_element].getchildren()[0])
         target_elements[i + min_element].classes.remove('target-text')
         target_elements[i + min_element].classes.add('target-text-modified')
-        print("Result:", result)
+        if debug_mode:
+            print("Result:", result)
+        global_counter.translated += 1
         if not i % 5:
             tree.write(
                 destination,
@@ -100,7 +115,9 @@ def start_translator(source, min_element, max_element, destination, headless):
                 encoding='utf-8',
                 method='html'
             )
-            print("Saving on i = ", i + min_element)
+            if debug_mode:
+                print("Saving on i = ", i + min_element)
+            print(f"Progress: {round(global_counter.percentage, 2)}%")
         i += 1
     tree.write(
         destination,
@@ -111,24 +128,24 @@ def start_translator(source, min_element, max_element, destination, headless):
 
 
 
-def start_parallelized_translator(source_path, dest_path, paragraphs_count, worker_count = 4):
-    step = round(paragraphs_count / worker_count)
+def start_parallelized_translator(source_path, dest_path, paragraphs_count, workers_count = 4, debug_mode = False):
+    step = round(paragraphs_count / workers_count)
     i = 0
     pairs = []
     while i < paragraphs_count:
         pairs.append([i, i + step])
         i += step
 
-    print(pairs)
+    print(f"Made slices for threads: {pairs}")
     threads = {}
-    for i in range(worker_count):
+    for i in range(workers_count):
         threads[i] = threading.Thread(
             target=start_translator, 
-            args = (source_path, pairs[i][0], pairs[i][1], dest_path.replace("X", str(i + 1)), True)
+            args = (source_path, pairs[i][0], pairs[i][1], dest_path.replace("X", str(i + 1)), True, debug_mode)
         )
-    for i in range(worker_count):
+    for i in range(workers_count):
         threads[i].start()
-    for i in range(worker_count):
+    for i in range(workers_count):
         threads[i].join()
 
 
@@ -143,10 +160,17 @@ if __name__ == "__main__":
         from_page = int(input("From page: "))
         to_page = int(input("To page: "))
     dest_folder = input("Destination folder: ")
-    dest_name = input("Destination name: ")
+    dest_name = input("Destination name (should contain X for index substitution): ")
     dest_path = os.path.join(dest_folder, dest_name)
     headless = input("Headless? [y] ") != "n"
+    debug_mode = input("Debug mode? [n] ") == "y"
+    global_counter = GlobalCounter(paragraphs_count)
     if auto:
-        start_parallelized_translator(source_path, dest_path, paragraphs_count)
+        workers_count = input("Number of workers? (4 by default)").strip()
+        if workers_count.isdigit():
+            workers_count = int(workers_count)
+        else:
+            workers_count = 4
+        start_parallelized_translator(source_path, dest_path, paragraphs_count, workers_count=workers_count, debug_mode=False)
     else:
-        start_translator(source_path, from_page, to_page, dest_path, headless)
+        start_translator(source_path, from_page, to_page, dest_path, headless, debug_mode)
