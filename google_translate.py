@@ -22,7 +22,7 @@ def translate_chain(driver, input_box, paragraphs):
         input_box.send_keys(par)
         selected_span = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located(
-                (By.CSS_SELECTOR, '[aria-live="polite"] div div span')# span span')
+                (By.CSS_SELECTOR, '[aria-live="polite"] div div span')
             )
         )
         t = 0
