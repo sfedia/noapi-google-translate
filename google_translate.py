@@ -154,15 +154,19 @@ def start_parallelized_translator(
 
 
 if __name__ == "__main__":
-    source_language_code = input("Source language (ru by default): ")
-    dest_language_code = input("Destination language (de by default): ")
+    source_language_code = input("Source language (ru by default): ").strip()
+    if not source_language_code:
+        source_language_code = "ru"
+    dest_language_code = input("Destination language (de by default): ").strip()
+    if not dest_language_code:
+        dest_language_code = "de"
     source_folder = input("Source folder: ")
     source_name = input("Source name: ")
     source_path = os.path.join(source_folder, source_name)
     paragraphs_count = len([par for par in provide_paragraphs(source_path)])
     print(f"Number of elements in the file: {paragraphs_count}")
-    auto = input("Auto? [y] ") != "n"
-    if not auto:
+    threaded = input("Use threaded translation? [y] ") != "n"
+    if not threaded:
         from_page = int(input("From page: "))
         to_page = int(input("To page: "))
     dest_folder = input("Destination folder: ")
@@ -171,7 +175,7 @@ if __name__ == "__main__":
     headless = input("Headless? [y] ") != "n"
     debug_mode = input("Debug mode? [n] ") == "y"
     global_counter = GlobalCounter(paragraphs_count)
-    if auto:
+    if threaded:
         workers_count = input("Number of workers? (4 by default)").strip()
         if workers_count.isdigit():
             workers_count = int(workers_count)
