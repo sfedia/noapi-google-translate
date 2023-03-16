@@ -61,7 +61,7 @@ def provide_paragraphs(source):
 
 
   
-def start_translator(source, min_element, max_element, destination, headless, debug_mode):
+def start_translator(source, min_element, max_element, destination, headless, debug_mode, source_lang, dest_lang):
     global global_counter
     options = webdriver.ChromeOptions()
     options.add_argument("--start-maximized")
@@ -73,7 +73,7 @@ def start_translator(source, min_element, max_element, destination, headless, de
                               chrome_options=options)
     driver.set_window_size(1920,1080)
 
-    driver.get('https://translate.google.com/?sl=ru&tl=de')
+    driver.get('https://translate.google.com/?sl={}&tl={}'.format(source_lang, dest_lang))
     turn_off_input_method_button = WebDriverWait(driver, 10).until(
         EC.presence_of_element_located(
             (By.CSS_SELECTOR, '[aria-label="Turn off Input Method"]')
@@ -128,7 +128,8 @@ def start_translator(source, min_element, max_element, destination, headless, de
 
 
 
-def start_parallelized_translator(source_path, dest_path, paragraphs_count, workers_count = 4, debug_mode = False):
+def start_parallelized_translator(
+        source_path, dest_path, paragraphs_count, workers_count = 4, debug_mode = False, source_language = "ru", dest_language = "de"):
     step = round(paragraphs_count / workers_count)
     i = 0
     pairs = []
@@ -141,7 +142,10 @@ def start_parallelized_translator(source_path, dest_path, paragraphs_count, work
     for i in range(workers_count):
         threads[i] = threading.Thread(
             target=start_translator, 
-            args = (source_path, pairs[i][0], pairs[i][1], dest_path.replace("X", str(i + 1)), True, debug_mode)
+            args = (
+                source_path, pairs[i][0], pairs[i][1], dest_path.replace("X", str(i + 1)),
+                True, debug_mode, source_language, dest_language
+            )
         )
     for i in range(workers_count):
         threads[i].start()
@@ -150,6 +154,8 @@ def start_parallelized_translator(source_path, dest_path, paragraphs_count, work
 
 
 if __name__ == "__main__":
+    source_language_code = input("Source language (ru by default): ")
+    dest_language_code = input("Destination language (de by default): ")
     source_folder = input("Source folder: ")
     source_name = input("Source name: ")
     source_path = os.path.join(source_folder, source_name)
@@ -171,6 +177,9 @@ if __name__ == "__main__":
             workers_count = int(workers_count)
         else:
             workers_count = 4
-        start_parallelized_translator(source_path, dest_path, paragraphs_count, workers_count=workers_count, debug_mode=False)
+        start_parallelized_translator(
+            source_path, dest_path, paragraphs_count, workers_count=workers_count, 
+            debug_mode=False, source_language=source_language_code, dest_language=dest_language_code
+        )
     else:
-        start_translator(source_path, from_page, to_page, dest_path, headless, debug_mode)
+        start_translator(source_path, from_page, to_page, dest_path, headless, debug_mode, source_language_code, dest_language_code)
