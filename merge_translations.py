@@ -1,10 +1,11 @@
 import lxml.html
 import os
-
+import argparse
 
 
 def is_thread_file(filename, prefix_name):
     return filename.startswith(prefix_name) and filename[len(prefix_name)].isdigit()
+
 
 def merge_files(source_folder, prefix_name):
     fls = [fl for fl in os.listdir(source_folder) if is_thread_file(fl, prefix_name)]
@@ -37,9 +38,18 @@ def merge_files(source_folder, prefix_name):
     print(f"Merged into '{os.path.join(source_folder, f'{prefix_name}-merged.html')}'")
 
 
-
 if __name__ == "__main__":
-    source_folder = input("Source folder: ")
-    prefix_name = input("Prefix name: ")
-    merge_files(source_folder, prefix_name)
+    parser = argparse.ArgumentParser(prog="merge_translations.py")
+    parser.add_argument("-p", "--prompt", action="store_true")
+    parser.add_argument("--source-folder")
+    parser.add_argument("--prefix-name")
+    args = parser.parse_args()
 
+    if args.prompt:
+        source_folder = input("Source folder: ")
+        prefix_name = input("Prefix name: ")
+    else:
+        source_folder = args.source_folder
+        prefix_name = args.prefix_name
+
+    merge_files(source_folder, prefix_name)

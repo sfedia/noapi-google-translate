@@ -9,6 +9,7 @@ import os
 import lxml.html
 import re
 import threading
+import argparse
 
 
 class GlobalCounter:
@@ -154,36 +155,83 @@ def start_parallelized_translator(
 
 
 if __name__ == "__main__":
-    source_language_code = input("Source language (ru by default): ").strip()
-    if not source_language_code:
-        source_language_code = "ru"
-    dest_language_code = input("Destination language (de by default): ").strip()
-    if not dest_language_code:
-        dest_language_code = "de"
-    source_folder = input("Source folder: ")
-    source_name = input("Source name: ")
-    source_path = os.path.join(source_folder, source_name)
-    paragraphs_count = len([par for par in provide_paragraphs(source_path)])
-    print(f"Number of elements in the file: {paragraphs_count}")
-    threaded = input("Use threaded translation? [y] ") != "n"
-    if not threaded:
-        from_page = int(input("From page: "))
-        to_page = int(input("To page: "))
-    dest_folder = input("Destination folder: ")
-    dest_name = input("Destination name (should contain X for index substitution): ")
-    dest_path = os.path.join(dest_folder, dest_name)
-    headless = input("Headless? [y] ") != "n"
-    debug_mode = input("Debug mode? [n] ") == "y"
-    global_counter = GlobalCounter(paragraphs_count)
+    parser = argparse.ArgumentParser(prog="google_translate.py")
+    parser.add_argument("-p", "--prompt", action="store_true")
+    parser.add_argument("--source-language")
+    parser.add_argument("--dest-language")
+    parser.add_argument("--source-folder")
+    parser.add_argument("--source-name")
+    parser.add_argument("--no-threads", action="store_true")
+    parser.add_argument("--from-page", type=int)
+    parser.add_argument("--to-page", type=int)
+    parser.add_argument("--no-headless", action="store_true")
+    parser.add_argument("--dest-folder")
+    parser.add_argument("--dest-name")
+    parser.add_argument("--debug", action="store_true")
+    parser.add_argument("--workers-count", type=int)
+    args = parser.parse_args()
+
+    if args.prompt:
+        source_language_code = input("Source language (ru by default): ").strip()
+        if not source_language_code:
+            source_language_code = "ru"
+        dest_language_code = input("Destination language (de by default): ").strip()
+        if not dest_language_code:
+            dest_language_code = "de"
+        source_folder = input("Source folder: ")
+        source_name = input("Source name: ")
+        source_path = os.path.join(source_folder, source_name)
+        paragraphs_count = len([par for par in provide_paragraphs(source_path)])
+        print(f"Number of elements in the file: {paragraphs_count}")
+        threaded = input("Use threaded translation? [y] ") != "n"
+        if not threaded:
+            from_page = int(input("From page: "))
+            to_page = int(input("To page: "))
+        dest_folder = input("Destination folder: ")
+        dest_name = input("Destination name (should contain X for index substitution): ")
+        dest_path = os.path.join(dest_folder, dest_name)
+        headless = input("Headless? [y] ") != "n"
+        debug = input("Debug mode? [n] ") == "y"
+        global_counter = GlobalCounter(paragraphs_count)
+        if threaded:
+            workers_count = input("Number of workers? (4 by default)").strip()
+            if workers_count.isdigit():
+                workers_count = int(workers_count)
+            else:
+                workers_count = 4
+    else:
+        source_language_code = args.source_language
+        dest_language_code = args.dest_language
+        source_folder = args.source_folder
+        source_name = args.source_name
+        source_path = os.path.join(source_folder, source_name)
+        threaded = not args.no_threads
+        from_page = args.from_page
+        to_page = args.to_page
+        headless = not args.no_headless
+        dest_folder = args.dest_folder
+        dest_name = args.dest_name
+        debug = args.debug
+        workers_count = args.workers_count
+
     if threaded:
-        workers_count = input("Number of workers? (4 by default)").strip()
-        if workers_count.isdigit():
-            workers_count = int(workers_count)
-        else:
-            workers_count = 4
         start_parallelized_translator(
-            source_path, dest_path, paragraphs_count, workers_count=workers_count, 
-            debug_mode=False, source_language=source_language_code, dest_language=dest_language_code
+            source_path,
+            dest_path,
+            paragraphs_count,
+            workers_count = workers_count, 
+            debug_mode = debug,
+            source_language = source_language_code,
+            dest_language = dest_language_code
         )
     else:
-        start_translator(source_path, from_page, to_page, dest_path, headless, debug_mode, source_language_code, dest_language_code)
+        start_translator(
+            source_path,
+            from_page,
+            to_page,
+            dest_path,
+            headless,
+            debug,
+            source_language_code,
+            dest_language_code
+        )

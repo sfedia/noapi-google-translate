@@ -3,6 +3,7 @@ import lxml.html
 import os
 import re
 import shutil
+import argparse
 
 
 def copy_index(source_path, dest_path):
@@ -34,11 +35,27 @@ def simplify_html(dest_path):
 
 
 if __name__ == "__main__":
-    source_folder = input("Source folder: ")
-    source_name = input("Source name: ")
+    parser = argparse.ArgumentParser(prog="html_simplifier.py")
+    parser.add_argument("-p", "--prompt", action="store_true")
+    parser.add_argument("--source-folder")
+    parser.add_argument("--source-name")
+    parser.add_argument("--dest-folder")
+    parser.add_argument("--dest-name")
+
+    args = parser.parse_args()
+
+    if args.prompt:
+        source_folder = input("Source folder: ")
+        source_name = input("Source name: ")
+        dest_folder = input("Destination folder: ")
+        dest_name = input("Destination name: ")
+    else:
+        source_folder = args.source_folder
+        source_name = args.source_name
+        dest_folder = args.dest_folder
+        dest_name = args.dest_name
+
     source_path = os.path.join(source_folder, source_name)
-    dest_folder = input("Destination folder: ")
-    dest_name = input("Destination name: ")
     dest_path = os.path.join(dest_folder, dest_name)
     copy_index(source_path, dest_path)
     simplify_html(dest_path)
